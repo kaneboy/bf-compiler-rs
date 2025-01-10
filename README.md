@@ -1,2 +1,4 @@
-# bf-compiler-rs
-BrainF*ck Compiler written in Rust
+# Brainf*ck Compiler written in Rust
+
+References:
+- Brainf*ck lang : https://brainfuck.org/
