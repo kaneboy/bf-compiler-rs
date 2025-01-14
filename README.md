@@ -1,9 +1,16 @@
 # Brainf*ck Compilers written in Rust
 
 References:
-- Brainf*ck lang : https://brainfuck.org/
+
+- Brainf*ck lang : https://en.wikipedia.org/wiki/Brainfuck
 
 Projects:
-- [Interpreter](/bf-interpreter/)
-- Compiler
-- JIT Compiler
+
+- Interpreter : [bfi/](bfi/)
+
+```shell
+./bfi helloworld.bf
+```
+
+- Compiler(bfc)
+- JIT Compiler(bfjit)
