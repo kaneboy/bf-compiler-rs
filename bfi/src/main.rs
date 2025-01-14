@@ -15,11 +15,11 @@ fn main() {
     let file_name: &str = &args[1];
     let source: String = read_source_file(file_name).unwrap();
 
-    let instructions: Vec<char> = source.chars().collect();     // 源代码的所有指令。
+    let instructions: Vec<char> = source.chars().collect();     // instructions of brainfuck program.
 
-    let mut mem: [u8; 30000] = [0; 30000];          // 机器的内存。
-    let mut mem_ptr: usize = 0;                     // 指向内存的指针。
-    let mut instruction_ptr: usize = 0;             // 指向指令的指针。
+    let mut mem: [u8; 30000] = [0; 30000];          // memory
+    let mut mem_ptr: usize = 0;                     // memory pointer
+    let mut instruction_ptr: usize = 0;             // instruction pointer
 
     let mut loop_begin_end_map: HashMap<usize, usize> = HashMap::new();
     let mut loop_end_begin_map: HashMap<usize, usize> = HashMap::new();
@@ -54,23 +54,23 @@ fn main() {
                             loop_end_begin_map.insert(loop_end_ptr, instruction_ptr);
                         },
                         None => {
-                            println!("ERROR: 找不到'['指令(位置：{})对应的']'指令。", instruction_ptr);
+                            println!("ERROR: Miss Match of Loop Instruction. {}", instruction_ptr);
                             return;
                         }
                     }
                 }
-                if mem[mem_ptr] != 0 {
-                    instruction_ptr += 1;
-                } else {
-                    instruction_ptr = loop_begin_end_map[&instruction_ptr];
-                }
+                instruction_ptr = if mem[mem_ptr] != 0 {
+                                      instruction_ptr + 1
+                                  } else {
+                                      loop_begin_end_map[&instruction_ptr]
+                                  }
             },
             ']' => {
-                if mem[mem_ptr] != 0 {
-                    instruction_ptr = loop_end_begin_map[&instruction_ptr];
-                } else {
-                    instruction_ptr += 1;
-                }
+                instruction_ptr = if mem[mem_ptr] != 0 {
+                                      loop_end_begin_map[&instruction_ptr]
+                                  } else {
+                                      instruction_ptr + 1
+                                  }
             },
             ',' => {
                 mem[mem_ptr] = getchar();
