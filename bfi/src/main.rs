@@ -62,12 +62,12 @@ fn main() {
                 instruction_ptr = if mem[mem_ptr] != 0 {
                                       instruction_ptr + 1
                                   } else {
-                                      loop_begin_end_map[&instruction_ptr]
+                                      loop_begin_end_map[&instruction_ptr] + 1
                                   }
             },
             ']' => {
                 instruction_ptr = if mem[mem_ptr] != 0 {
-                                      loop_end_begin_map[&instruction_ptr]
+                                      loop_end_begin_map[&instruction_ptr] + 1
                                   } else {
                                       instruction_ptr + 1
                                   }
