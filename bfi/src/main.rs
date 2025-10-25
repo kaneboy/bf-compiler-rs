@@ -1,93 +1,42 @@
-use std::collections::HashMap;
+#![allow(dead_code)]
+
 use std::env;
 use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Read};
+use anyhow::{Result, Context};
+use crate::instruction::Instruction;
+use crate::machine::Machine;
 
-fn main() {
+mod machine;
+mod instruction;
+mod token;
+mod lexer;
+
+fn main() -> Result<()> {
 
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
         println!("Usage: bfi <file>");
-        return;
+        return Ok(());
     }
 
     let file_name: &str = &args[1];
-    let source: String = read_source_file(file_name).unwrap();
+    let source: String = read_source_file(file_name).context("读取源文件")?;
 
-    let instructions: Vec<char> = source.chars().collect();     // instructions of brainfuck program.
+    let instructions: Vec<Instruction> = lexer::parse_source_code(&source).context("解析源代码")?;
 
-    let mut mem: [u8; 30000] = [0; 30000];          // memory
-    let mut mem_ptr: usize = 0;                     // memory pointer
-    let mut instruction_ptr: usize = 0;             // instruction pointer
+    // for instruction in &instructions {
+    //     print!("{:?} ", instruction)
+    // }
 
-    let mut loop_begin_end_map: HashMap<usize, usize> = HashMap::new();
-    let mut loop_end_begin_map: HashMap<usize, usize> = HashMap::new();
+    let mut machine = Machine::new(instructions);
+    machine.run_to_end().context("指令执行")?;
 
-    while instruction_ptr < instructions.len() {
-
-        let instruction = instructions[instruction_ptr];
-
-        match instruction {
-            '+' => {
-                mem[mem_ptr] += 1;
-                instruction_ptr += 1;
-            },
-            '-' => {
-                mem[mem_ptr] -= 1;
-                instruction_ptr += 1;
-            },
-            '>' => {
-                mem_ptr += 1;
-                instruction_ptr += 1;
-            },
-            '<' => {
-                mem_ptr -= 1;
-                instruction_ptr += 1;
-            },
-            '[' => {
-                let loop_begin_end_ensured = loop_begin_end_map.contains_key(&instruction_ptr);
-                if !loop_begin_end_ensured {
-                    match find_loop_end(&instructions, instruction_ptr) {
-                        Some(loop_end_ptr) => {
-                            loop_begin_end_map.insert(instruction_ptr, loop_end_ptr);
-                            loop_end_begin_map.insert(loop_end_ptr, instruction_ptr);
-                        },
-                        None => {
-                            println!("ERROR: Miss Match of Loop Instruction. {}", instruction_ptr);
-                            return;
-                        }
-                    }
-                }
-                instruction_ptr = if mem[mem_ptr] != 0 {
-                                      instruction_ptr + 1
-                                  } else {
-                                      loop_begin_end_map[&instruction_ptr] + 1
-                                  }
-            },
-            ']' => {
-                instruction_ptr = if mem[mem_ptr] != 0 {
-                                      loop_end_begin_map[&instruction_ptr] + 1
-                                  } else {
-                                      instruction_ptr + 1
-                                  }
-            },
-            ',' => {
-                mem[mem_ptr] = getchar();
-                instruction_ptr += 1;
-            },
-            '.' => {
-                putchar(mem[mem_ptr]);
-                instruction_ptr += 1;
-            },
-            _ => {
-                instruction_ptr += 1;
-            },
-        }
-    }
+    Ok(())
 }
 
-fn read_source_file(file_name: &str) -> anyhow::Result<String> {
+fn read_source_file(file_name: &str) -> Result<String> {
 
     let file: File = File::open(file_name)?;
     let mut buf_reader = BufReader::new(file);
@@ -96,35 +45,4 @@ fn read_source_file(file_name: &str) -> anyhow::Result<String> {
     buf_reader.read_to_string(&mut contents)?;
 
     Ok(contents)
-}
-
-fn find_loop_end(instructions: &[char], loop_begin: usize) -> Option<usize> {
-    let mut result: usize = loop_begin + 1;
-    let mut layer: usize = 0;
-    while result < instructions.len() {
-        if instructions[result] == ']' {
-            if layer == 0 {
-                return Some(result);
-            } else {
-                layer -= 1;
-            }
-        }
-        else if instructions[result] == '[' {
-            layer += 1;
-        }
-        result += 1;
-    }
-    None
-}
-
-fn getchar() -> u8 {
-    let input: Option<u8> = std::io::stdin()
-        .bytes()
-        .next()
-        .and_then(|result| result.ok());
-    input.unwrap()
-}
-
-fn putchar(byte: u8) {
-    _ = std::io::stdout().write(&[byte]).unwrap();
 }
